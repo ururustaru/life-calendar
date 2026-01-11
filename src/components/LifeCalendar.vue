@@ -41,6 +41,13 @@
         </div>
       </div>
       <div class="controls">
+        <button @click="$emit('add-event')" class="btn btn-primary">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Добавить событие</span>
+        </button>
         <button @click="$emit('create-new-calendar')" class="btn btn-secondary">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -48,13 +55,6 @@
             <line x1="8" y1="12" x2="16" y2="12"></line>
           </svg>
           <span>Создать новый календарь</span>
-        </button>
-        <button @click="$emit('add-event')" class="btn btn-primary">
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span>Добавить событие</span>
         </button>
         <button @click="$emit('export')" class="btn btn-secondary">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -201,7 +201,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from 'vue'
+import { computed, ref, watch, nextTick, onUnmounted } from 'vue'
 import type { LifeEvent, CalendarData } from '../types'
 import { getWeekPosition, getWeeksInRange } from '../utils/dateUtils'
 
@@ -254,13 +254,16 @@ function getCurrentCalendarName(): string {
 const birthDate = computed(() => new Date(props.data.birthDate))
 const events = computed(() => props.data.events)
 
+// Реактивные размеры для адаптивности
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1920)
+
 // CSS-переменные для размеров (используются в стилях и скриптах)
-const WEEK_CELL_SIZE = 13 // Размер ячейки недели в пикселях
+const WEEK_CELL_SIZE = computed(() => windowWidth.value <= 480 ? 11 : 13)
 const WEEK_CELL_GAP = 2 // Отступ между ячейками в пикселях
-const YEAR_LABEL_WIDTH = 50 // Ширина метки года в пикселях
+const YEAR_LABEL_WIDTH = computed(() => windowWidth.value <= 480 ? 35 : (windowWidth.value <= 768 ? 40 : 50))
 
 // Вычисляем полную ширину ячейки (размер + gap)
-const WEEK_CELL_FULL_WIDTH = WEEK_CELL_SIZE + WEEK_CELL_GAP
+const WEEK_CELL_FULL_WIDTH = computed(() => WEEK_CELL_SIZE.value + WEEK_CELL_GAP)
 
 const rangeEvents = computed(() => 
   events.value.filter(e => e.type === 'range')
@@ -529,7 +532,7 @@ function getDateEventLabelStyle(event: LifeEvent, year: number): Record<string, 
   // Используем CSS-переменные для согласованности
   // Позиция события в строке (в пикселях от начала weeks-row)
   // Центрируем над соответствующей неделей
-  const leftPosition = YEAR_LABEL_WIDTH + position.week * WEEK_CELL_FULL_WIDTH + WEEK_CELL_SIZE / 2
+  const leftPosition = YEAR_LABEL_WIDTH.value + position.week * WEEK_CELL_FULL_WIDTH.value + WEEK_CELL_SIZE.value / 2
   
   return {
     left: `${leftPosition}px`,
@@ -560,10 +563,10 @@ function getRangeEventTooltip(event: LifeEvent): string {
 function updateDimensions() {
   nextTick(() => {
     if (gridRef.value) {
-      // Ширина календаря: метки года (60px) + 52 недели (52 * 13px)
-      gridWidth.value = 60 + 52 * 13
-      // Высота: 90 лет * (20px высота строки + 2px отступ)
-      gridHeight.value = 90 * 22
+      // Ширина календаря: метки года + 52 недели (52 * размер ячейки)
+      gridWidth.value = YEAR_LABEL_WIDTH.value + 52 * WEEK_CELL_FULL_WIDTH.value
+      // Высота: 90 лет * (высота строки + отступ)
+      gridHeight.value = 90 * (WEEK_CELL_SIZE.value + 4)
     }
   })
 }
@@ -585,6 +588,13 @@ watch([dataId, dataBirthDate, dataEventsHash], () => {
   })
 }, { immediate: true })
 
+// Пересчитываем позиции меток событий при изменении размера окна
+watch([windowWidth], () => {
+  nextTick(() => {
+    updateDimensions()
+  })
+})
+
 // Отдельный watcher для размеров (не нужно пересчитывать при каждом изменении)
 watch(() => props.data.id, () => {
   nextTick(() => {
@@ -593,11 +603,22 @@ watch(() => props.data.id, () => {
 }, { immediate: true })
 
 // Обновляем размеры после монтирования и при изменении размера окна
+let resizeHandler: (() => void) | null = null
 if (typeof window !== 'undefined') {
+  resizeHandler = () => {
+    windowWidth.value = window.innerWidth
+    updateDimensions()
+  }
   nextTick(() => {
     updateDimensions()
   })
-  window.addEventListener('resize', updateDimensions)
+  window.addEventListener('resize', resizeHandler)
+  
+  onUnmounted(() => {
+    if (resizeHandler) {
+      window.removeEventListener('resize', resizeHandler)
+    }
+  })
 }
 </script>
 
@@ -775,6 +796,10 @@ if (typeof window !== 'undefined') {
   box-shadow: 
     4px 4px 12px rgba(0, 0, 0, 0.08),
     -2px -2px 6px rgba(255, 255, 255, 0.8);
+  /* Улучшение для touch-устройств */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .btn:active {
@@ -843,8 +868,6 @@ if (typeof window !== 'undefined') {
 
 .calendar-grid {
   position: relative;
-  /* Оптимизация рендеринга большого количества элементов */
-  contain: layout style paint;
   /* Ускорение GPU */
   transform: translateZ(0);
 }
@@ -915,6 +938,9 @@ if (typeof window !== 'undefined') {
   /* Оптимизация */
   will-change: box-shadow;
   contain: layout style paint;
+  /* Улучшение для touch-устройств */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .date-event-label:hover {
@@ -936,6 +962,9 @@ if (typeof window !== 'undefined') {
   border-radius: 2px;
   position: relative;
   cursor: pointer;
+  /* Улучшение для touch-устройств */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   /* Упрощенные переходы - только нужные свойства */
   transition: border-color 0.15s ease, background-color 0.15s ease;
   /* Оптимизация рендеринга */
@@ -1032,6 +1061,9 @@ if (typeof window !== 'undefined') {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   /* Оптимизация */
   contain: layout style paint;
+  /* Улучшение для touch-устройств */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .date-event-list-item:hover {
@@ -1197,6 +1229,9 @@ if (typeof window !== 'undefined') {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   /* Оптимизация */
   contain: layout style paint;
+  /* Улучшение для touch-устройств */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .legend-item:hover {
@@ -1232,25 +1267,212 @@ if (typeof window !== 'undefined') {
 }
 
 @media (max-width: 768px) {
+  .life-calendar-container {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .calendar-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+
+  .header-left {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .calendar-header h1 {
+    font-size: 22px;
+    text-align: center;
+  }
+
+  .calendar-selector {
+    width: 100%;
+  }
+
+  .calendar-select {
+    width: 100%;
+    font-size: 14px;
+    padding: 10px 16px;
+    padding-right: 40px;
+  }
+
+  .calendar-edit-btn,
+  .calendar-delete-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .controls {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    justify-content: center;
+  }
+
+  .btn span {
+    display: inline;
+  }
+
   .calendar-wrapper {
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
   }
   
   .date-events-list {
+    min-width: unset;
+    width: 100%;
     border-left: none;
     border-right: none;
     border-top: 2px solid #eee;
     border-bottom: 2px solid #eee;
-    padding: 20px 0;
+    padding: 16px 0;
     max-height: 400px;
+  }
+
+  .date-events-list-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .date-events-list-title {
+    font-size: 16px;
+    text-align: center;
+  }
+
+  .sort-select {
+    width: 100%;
+    font-size: 13px;
   }
   
   .legend {
+    min-width: unset;
+    width: 100%;
     border-left: none;
     border-top: 2px solid #eee;
     padding-left: 0;
-    padding-top: 20px;
+    padding-top: 16px;
+  }
+
+  .legend-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .legend-title {
+    font-size: 16px;
+    text-align: center;
+  }
+
+  .calendar-grid-container {
+    max-height: 60vh;
+  }
+
+  .year-label {
+    font-size: 10px;
+    width: 40px;
+    padding-right: 6px;
+  }
+
+  .date-event-label {
+    font-size: 10px;
+    padding: 3px 8px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .date-event-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .date-event-list-item {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .date-event-list-name {
+    font-size: 13px;
+  }
+
+  .date-event-list-date {
+    font-size: 11px;
+  }
+
+  .legend-item {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .legend-text {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .life-calendar-container {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .calendar-header h1 {
+    font-size: 20px;
+  }
+
+  /* Размеры ячеек уже адаптируются через CSS-переменные из JS */
+  .week-cell {
+    min-width: 11px;
+    min-height: 11px;
+  }
+
+  .year-label {
+    font-size: 9px;
+    width: 35px;
+  }
+
+  .date-event-label {
+    font-size: 9px;
+    padding: 2px 6px;
+    max-width: 100px;
+  }
+
+  .date-events-list-title,
+  .legend-title {
+    font-size: 15px;
+  }
+
+  .date-event-list-item {
+    padding: 8px;
+  }
+
+  .legend-item {
+    padding: 8px;
+  }
+
+  .btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .modal-content {
+    width: 95%;
+    max-width: 95%;
+    margin: 10px;
   }
 }
 </style>

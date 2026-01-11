@@ -17,3 +17,23 @@ body {
   min-height: 100vh;
   padding: 20px;
 }
+
+@media (max-width: 768px) {
+  #app {
+    padding: 12px;
+  }
+
+  body {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  #app {
+    padding: 8px;
+  }
+
+  body {
+    font-size: 13px;
+  }
+}

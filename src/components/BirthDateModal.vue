@@ -179,6 +179,10 @@ function handleSubmit() {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  /* Улучшение для touch-устройств */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .btn-primary {
@@ -188,5 +192,82 @@ function handleSubmit() {
 
 .btn-primary:hover {
   background-color: #0056b3;
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    max-width: 95%;
+    margin: 10px;
+    border-radius: 12px;
+  }
+
+  .modal-header {
+    padding: 16px;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  .form-control {
+    padding: 10px;
+    font-size: 16px; /* Предотвращаем зум на iOS */
+    border-radius: 8px;
+  }
+
+  .form-hint {
+    font-size: 11px;
+  }
+
+  .form-actions {
+    margin-top: 20px;
+    padding-top: 16px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .modal-header {
+    padding: 14px;
+  }
+
+  .modal-header h2 {
+    font-size: 17px;
+  }
+
+  .modal-body {
+    padding: 14px;
+  }
+
+  .btn {
+    padding: 11px 14px;
+    font-size: 14px;
+  }
 }
 </style>

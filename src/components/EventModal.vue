@@ -392,6 +392,10 @@ function handleDelete() {
   box-shadow: 
     4px 4px 12px rgba(0, 0, 0, 0.08),
     -2px -2px 6px rgba(255, 255, 255, 0.8);
+  /* Улучшение для touch-устройств */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 .btn:active {
@@ -446,5 +450,107 @@ function handleDelete() {
   box-shadow: 
     8px 8px 20px rgba(220, 53, 69, 0.35),
     -2px -2px 8px rgba(255, 255, 255, 0.4);
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    max-width: 95%;
+    margin: 10px;
+    max-height: 95vh;
+    border-radius: 12px;
+  }
+
+  .modal-header {
+    padding: 16px;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+  }
+
+  .close-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 28px;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  .form-control {
+    padding: 10px;
+    font-size: 16px; /* Предотвращаем зум на iOS */
+    border-radius: 8px;
+  }
+
+  .color-picker {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .color-input {
+    width: 100%;
+    height: 50px;
+  }
+
+  .color-text {
+    font-size: 16px; /* Предотвращаем зум на iOS */
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 20px;
+    padding-top: 16px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+
+  .modal-header {
+    padding: 14px;
+  }
+
+  .modal-header h2 {
+    font-size: 17px;
+  }
+
+  .modal-body {
+    padding: 14px;
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .btn {
+    padding: 11px 14px;
+    font-size: 14px;
+  }
 }
 </style>

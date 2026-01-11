@@ -2,8 +2,9 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Относительный путь, чтобы иконка работала и в корне, и во вложенной папке -->
+    <link rel="icon" type="image/svg+xml" href="./calendar-icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
     <title>Life Calendar - Ваша жизнь в неделях</title>
     <!-- Шрифт для поддержки эмодзи флагов -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,6 +13,7 @@
   </head>
   <body>
     <div id="app"></div>
+    <!-- src будет переписан Vite при билде с учётом base='./' -->
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -302,4 +302,22 @@ function handleImport() {
   font-size: 18px;
   color: #666;
 }
+
+@media (max-width: 768px) {
+  #app {
+    padding: 0;
+  }
+
+  .loading {
+    font-size: 16px;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .loading {
+    font-size: 15px;
+    padding: 16px;
+  }
+}
 </style>
